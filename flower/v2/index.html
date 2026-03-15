@@ -2,173 +2,131 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>포항 벚꽃 지도 🌸</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5n/N0RDwH0=" crossorigin=""/>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
+        /* 폰트 설정: LineSeed */
         @font-face {
-            font-family: 'LineSeed';
+            font-family: 'LineSeed'; 
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
-            font-weight: 400;
-            font-display: swap;
+            font-weight: 400; font-display: swap;
         }
         @font-face {
-            font-family: 'LineSeed';
+            font-family: 'LineSeed'; 
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
-            font-weight: 700;
-            font-display: swap;
-        }
-
-        :root {
-            --primary: #4CAF50;     /* 연두색 계열 */
-            --light-bg: #f8fff8;
-            --text: #2c3e50;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+            font-weight: 700; font-display: swap;
         }
 
         body {
-            font-family: 'LineSeed', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-            background: var(--light-bg);
-            height: 100vh;
-            overflow: hidden;
-            color: var(--text);
+            margin: 0;
+            padding: 0;
+            font-family: 'LineSeed', sans-serif;
+            background: #fffaf0;
+            color: #333;
         }
 
+        /* 모바일 대응 상하 구성 */
         #container {
+            display: flex;
+            flex-direction: column;
             height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
+        /* 지도 영역: 화면의 45% 차지 */
         #map {
+            width: 100%;
+            height: 45vh;
+            z-index: 10;
+        }
+
+        /* 정보 및 리스트 영역: 나머지 공간 차지 */
+        #sidebar {
             flex: 1;
-            min-height: 60vh;
-        }
-
-        #bottom-sheet {
-            background: white;
-            border-top-left-radius: 24px;
-            border-top-right-radius: 24px;
-            box-shadow: 0 -4px 20px rgba(0,0,0,0.12);
-            max-height: 55vh;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .sheet-header {
-            padding: 16px 20px 8px;
-            border-bottom: 1px solid #eee;
-            text-align: center;
-            position: relative;
-        }
-
-        .handle {
-            width: 40px;
-            height: 5px;
-            background: #ddd;
-            border-radius: 999px;
-            margin: 0 auto 12px;
+            padding: 20px;
+            overflow-y: auto;
+            background: #fff;
+            border-top: 4px solid #f0fdf4; /* 연두색 포인트 */
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+            border-radius: 25px 25px 0 0;
+            margin-top: -20px;
+            z-index: 20;
         }
 
         h1 {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin-bottom: 4px;
+            text-align: center;
+            color: #e91e63;
+            font-size: 22px;
+            margin-bottom: 5px;
         }
 
         .subtitle {
-            font-size: 0.875rem;
+            text-align: center;
             color: #666;
-        }
-
-        .scroll-area {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 20px 20px;
+            font-size: 14px;
+            margin-bottom: 20px;
         }
 
         h2 {
-            font-size: 1.15rem;
-            font-weight: 700;
-            color: var(--primary);
-            margin: 24px 0 12px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid #e8f5e9;
+            color: #2e7d32; /* 연두/초록 계열 */
+            font-size: 17px;
+            margin: 20px 0 10px;
+            display: flex;
+            align-items: center;
+        }
+        
+        h2::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 16px;
+            background: #a3e635;
+            margin-right: 8px;
+            border-radius: 2px;
         }
 
         ul {
             list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         li {
-            padding: 14px 16px;
+            padding: 15px;
             margin-bottom: 10px;
-            background: #f1f8f1;
-            border-radius: 16px;
+            background: #f9fff9;
+            border: 1px solid #eefae1;
+            border-radius: 15px;
             cursor: pointer;
-            transition: all 0.25s ease;
-            font-size: 1rem;
-            display: flex;
-            align-items: center;
-            box-shadow: 0 2px 6px rgba(76,175,80,0.08);
+            transition: background 0.2s;
+            font-size: 15px;
+            font-weight: 400;
         }
 
-        li:hover,
         li:active {
-            background: #e8f5e9;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(76,175,80,0.15);
+            background: #eefae1;
         }
 
-        li::before {
-            content: "📍";
-            margin-right: 12px;
-            font-size: 1.3rem;
+        /* 연두색 핀 스타일 */
+        .custom-pin {
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-
-        .leaflet-popup-content-wrapper {
-            border-radius: 16px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
-        }
-
-        .leaflet-popup-tip {
-            background: #e8f5e9;
+        .pin-svg {
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
         }
 
         .popup-content {
-            font-family: inherit;
-            padding: 8px 4px;
-        }
-
-        .popup-title {
-            color: var(--primary);
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 6px;
+            font-family: 'LineSeed', sans-serif;
+            text-align: center;
         }
 
         .attribution {
-            font-size: 0.75rem;
-            color: #888;
+            font-size: 11px;
+            color: #aaa;
             text-align: center;
-            padding: 12px 20px;
-            background: #f9fff9;
-        }
-
-        @media (min-width: 768px) {
-            #bottom-sheet {
-                max-width: 420px;
-                margin: 0 auto;
-                border-radius: 24px;
-                box-shadow: 0 -8px 40px rgba(0,0,0,0.15);
-            }
+            margin: 30px 0 10px;
         }
     </style>
 </head>
@@ -176,33 +134,26 @@
     <div id="container">
         <div id="map"></div>
 
-        <div id="bottom-sheet">
-            <div class="sheet-header">
-                <div class="handle"></div>
-                <h1>포항 벚꽃 명소 🌸</h1>
-                <p class="subtitle">북구 · 남구 15곳 · 클릭 시 위치로 이동합니다</p>
-            </div>
-
-            <div class="scroll-area">
-                <h2>북구</h2>
-                <ul id="bukgu-list"></ul>
-
-                <h2>남구</h2>
-                <ul id="namgu-list"></ul>
-
-                <div class="attribution">
-                    데이터 기반: 포항시 공식 및 사용자 제공 정보 • 지도: © OpenStreetMap contributors & CARTO<br>
-                    제작: 2026 🌿
-                </div>
+        <div id="sidebar">
+            <h1>포항 벚꽃 스팟 🌸</h1>
+            <p class="subtitle">지도의 연두색 핀을 누르거나 목록을 클릭하세요!</p>
+            
+            <h2>북구 주요 명소</h2>
+            <ul id="bukgu-list"></ul>
+            
+            <h2>남구 주요 명소</h2>
+            <ul id="namgu-list"></ul>
+            
+            <div class="attribution">
+                제작: 2026 포항 벚꽃 프로젝트 • 폰트: LINESeed<br>
+                지도: OpenStreetMap
             </div>
         </div>
     </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 장소 데이터 (기존 좌표 유지, 실제 OSM/네이버 지도 등과 대조하여 신뢰성 있는 값 사용)
         const spots = [
-            // 북구
             { district: "북구", name: "경상북도수목원", address: "포항시 북구 죽장면 상옥리 산2-47", lat: 36.1408, lon: 129.2503 },
             { district: "북구", name: "덕동문화마을", address: "포항시 북구 기북면 오덕리 210", lat: 36.1285, lon: 129.2721 },
             { district: "북구", name: "월포초등학교", address: "포항시 북구 청하면 월포리 306", lat: 36.1682, lon: 129.3054 },
@@ -210,8 +161,6 @@
             { district: "북구", name: "칠포그린로즈", address: "포항시 북구 흥해읍 암각화길 31", lat: 36.0824, lon: 129.3756 },
             { district: "북구", name: "한동대학교", address: "포항시 북구 흥해읍 남송리 3", lat: 36.1028, lon: 129.3880 },
             { district: "북구", name: "환호공원", address: "포항시 북구 환호동 347", lat: 36.0535, lon: 129.3752 },
-            
-            // 남구
             { district: "남구", name: "구룡포병포교차로길", address: "포항시 남구 구룡포읍 병포리", lat: 35.9704, lon: 129.4308 },
             { district: "남구", name: "영일대호수공원", address: "포항시 남구 행복길 75", lat: 36.0251, lon: 129.3554 },
             { district: "남구", name: "오어사", address: "포항시 남구 오천읍 항사리 산 28-14", lat: 35.9847, lon: 129.3802 },
@@ -224,64 +173,56 @@
 
         // 지도 초기화
         const map = L.map('map', {
-            zoomControl: true,
-            attributionControl: true,
-            zoomAnimation: true,
-            fadeAnimation: true
-        }).setView([36.0195, 129.3435], 12);
+            zoomControl: false // 모바일 화면 확보를 위해 줌 컨트롤 숨김
+        }).setView([36.0195, 129.3435], 11);
 
-        // 흰색/라이트 맵 타일
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-            subdomains: 'abcd',
             maxZoom: 19
         }).addTo(map);
 
-        // 연두색 커스텀 핀 아이콘
+        // 연두색 핀 아이콘 정의 (SVG)
         const greenPinIcon = L.divIcon({
             className: 'custom-pin',
-            html: '<div style="background:#4CAF50;width:28px;height:28px;border-radius:50%;border:4px solid #ffffff;box-shadow:0 4px 10px rgba(76,175,80,0.5);"></div>',
-            iconSize: [28, 28],
-            iconAnchor: [14, 14],
-            popupAnchor: [0, -14]
+            html: `
+                <svg class="pin-svg" width="30" height="42" viewBox="0 0 30 42" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M15 0C6.71573 0 0 6.71573 0 15C0 26.25 15 42 15 42C15 42 30 26.25 30 15C30 6.71573 23.2843 0 15 0Z" fill="#a3e635"/>
+                    <circle cx="15" cy="15" r="6" fill="white"/>
+                </svg>`,
+            iconSize: [30, 42],
+            iconAnchor: [15, 42],
+            popupAnchor: [0, -40]
         });
 
         const markers = {};
-
         const bukguList = document.getElementById('bukgu-list');
         const namguList = document.getElementById('namgu-list');
 
         spots.forEach((spot, index) => {
             const marker = L.marker([spot.lat, spot.lon], { icon: greenPinIcon }).addTo(map);
-
+            
             const popupHTML = `
                 <div class="popup-content">
-                    <div class="popup-title">${spot.name}</div>
-                    <div style="font-size:0.9rem;color:#555;">${spot.address}</div>
-                    <div style="margin-top:8px;font-size:0.85rem;color:var(--primary);">📍 ${spot.district} • 포항 벚꽃 명소</div>
+                    <strong style="color:#2e7d32; font-size:15px;">${spot.name}</strong><br>
+                    <span style="font-size:12px; color:#666;">${spot.address}</span>
                 </div>
             `;
-            marker.bindPopup(popupHTML, { maxWidth: 280 });
-
+            marker.bindPopup(popupHTML);
             markers[index] = marker;
 
             const li = document.createElement('li');
-            li.textContent = spot.name;
-            li.addEventListener('click', () => {
-                map.flyTo([spot.lat, spot.lon], 16, { duration: 1.2 });
-                setTimeout(() => marker.openPopup(), 800);
-            });
+            li.innerHTML = `<strong>${spot.name}</strong><br><small style="color:#888">${spot.address}</small>`;
+            li.onclick = () => {
+                map.flyTo([spot.lat, spot.lon], 15, { duration: 1 });
+                marker.openPopup();
+                // 클릭 시 지도가 있는 상단으로 스크롤 이동
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            };
 
             if (spot.district === "북구") {
                 bukguList.appendChild(li);
             } else {
                 namguList.appendChild(li);
             }
-        });
-
-        // 모바일에서 지도 로드 후 초기 팝업 방지 등
-        map.whenReady(() => {
-            console.log('포항 벚꽃 지도 로드 완료 🌿');
         });
     </script>
 </body>
