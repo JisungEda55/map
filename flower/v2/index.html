@@ -22,18 +22,39 @@
             margin: 0;
             padding: 0;
             font-family: 'LineSeed', sans-serif;
-            font-weight: 700; /* 전역 700 설정 */
+            font-weight: 700;
             background: #fffaf0;
             color: #333;
             -webkit-font-smoothing: antialiased;
+            overflow: hidden; /* 전체 스크롤 방지 (사이드바 내부 스크롤 사용) */
         }
 
-        #container { display: flex; flex-direction: column; height: 100vh; }
-        #map { width: 100%; height: 45vh; position: relative; }
+        #container { 
+            display: flex; 
+            flex-direction: column; 
+            height: 100vh; 
+        }
+
+        /* [비율 조정] 지도 5.2 */
+        #map { 
+            width: 100%; 
+            height: 52vh; 
+            position: relative; 
+            z-index: 1;
+        }
+
+        /* [비율 조정] 사이드바 4.8 */
         #sidebar { 
-            flex: 1; padding: 25px 20px; overflow-y: auto; background: #fff; 
-            border-top: 4px solid #f0fdf4; border-radius: 30px 30px 0 0; 
-            margin-top: -30px; z-index: 1000; box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+            height: 48vh;
+            padding: 30px 20px; 
+            overflow-y: auto; 
+            background: #fff; 
+            border-top: 4px solid #f0fdf4; 
+            border-radius: 30px 30px 0 0; 
+            margin-top: -30px; /* 자연스러운 겹침 효과 */
+            z-index: 1000; 
+            box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+            box-sizing: border-box;
         }
 
         h1 { text-align: center; color: #e91e63; font-size: 24px; margin: 0 0 20px 0; }
@@ -47,9 +68,7 @@
         }
         li:active { transform: scale(0.98); background: #eefae1; }
 
-        /* --- 커스텀 지도 컨트롤 UI --- */
-        
-        /* 1. 레이어 전환 버튼 (지구본) */
+        /* 커스텀 레이어 버튼 (AI 배색 그라데이션) */
         .map-layer-btn {
             position: absolute; top: 20px; right: 20px; z-index: 2000;
             width: 50px; height: 50px; border-radius: 50%;
@@ -58,15 +77,13 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.15);
             border: none; outline: none;
         }
-        /* 일반 모드: 흰색 배경 */
         .layer-street { background: #ffffff; color: #333; }
-        /* 위성 모드: AI 그라데이션 */
         .layer-satellite { 
             background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%); 
             color: #fff; 
         }
 
-        /* 2. 알약 모양 줌 컨트롤 */
+        /* 알약형 줌 컨트롤 */
         .zoom-pill {
             position: absolute; top: 85px; right: 20px; z-index: 2000;
             display: flex; flex-direction: column;
@@ -105,16 +122,13 @@
 
         <div id="sidebar">
             <h1>포항 벚꽃 스팟 🌸</h1>
-            <h2>북구 주요 명소</h2>
             <ul id="bukgu-list"></ul>
-            <h2>남구 주요 명소</h2>
             <ul id="namgu-list"></ul>
         </div>
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 맵 타일 설정
         const streetMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' });
         const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
 
@@ -122,10 +136,9 @@
             center: [36.0195, 129.3435],
             zoom: 11,
             layers: [streetMap],
-            zoomControl: false // 기본 줌 컨트롤 숨김
+            zoomControl: false
         });
 
-        // 레이어 전환 로직
         let isSatellite = false;
         function toggleLayer() {
             const btn = document.getElementById('layerToggle');
@@ -169,6 +182,15 @@
         const bukguList = document.getElementById('bukgu-list');
         const namguList = document.getElementById('namgu-list');
 
+        // 리스트 타이틀을 UL 안이 아니라 JS로 동적 추가 (가독성 유지)
+        const addSection = (list, title) => {
+            const h2 = document.createElement('h2');
+            h2.textContent = title;
+            list.parentNode.insertBefore(h2, list);
+        };
+        addSection(bukguList, "북구 주요 명소");
+        addSection(namguList, "남구 주요 명소");
+
         spots.forEach((spot) => {
             const marker = L.marker([spot.lat, spot.lon], { icon: greenPinIcon }).addTo(map);
             marker.bindPopup(`<div class="popup-content"><strong>${spot.name}</strong><br><small style="color:#666">${spot.address}</small></div>`);
@@ -178,7 +200,8 @@
             li.onclick = () => {
                 map.flyTo([spot.lat, spot.lon], 16, { duration: 1.5 });
                 marker.openPopup();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                // 사이드바 내부가 아닌 페이지 최상단(지도가 있는 곳)으로 이동
+                document.getElementById('map').scrollIntoView({ behavior: 'smooth' });
             };
             (spot.district === "북구" ? bukguList : namguList).appendChild(li);
         });
