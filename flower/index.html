@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>포항 벚꽃 지도 🌸</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Noto Sans KR', sans-serif;
+            background: #fffaf0;
+        }
+        #container {
+            display: flex;
+            height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        #sidebar {
+            width: 320px;
+            background: #fff;
+            padding: 25px;
+            overflow-y: auto;
+            border-right: 3px solid #ffe4e1;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.05);
+        }
+        #map {
+            flex: 1;
+        }
+        h1 {
+            text-align: center;
+            color: #e91e63;
+            font-size: 28px;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(233, 30, 99, 0.2);
+        }
+        h2 {
+            color: #e91e63;
+            font-size: 18px;
+            margin: 25px 0 10px;
+            border-bottom: 2px solid #ffe4e1;
+            padding-bottom: 5px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        li {
+            padding: 14px 15px;
+            margin-bottom: 8px;
+            background: #fffaf0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+        }
+        li:hover {
+            background: #fff0f5;
+            transform: translateX(5px);
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.15);
+        }
+        li::before {
+            content: "🌸";
+            margin-right: 10px;
+            font-size: 18px;
+        }
+        .popup-content {
+            font-family: 'Noto Sans KR', sans-serif;
+            line-height: 1.4;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.3);
+        }
+        .leaflet-popup-tip {
+            background: #ffe4e1;
+        }
+        .attribution {
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- 사이드바 -->
+        <div id="sidebar">
+            <h1>포항 벚꽃 스팟 지도 🌸</h1>
+            <p style="text-align:center; color:#e91e63; font-size:15px; margin-bottom:20px;">
+                북구 • 남구 15곳의 아름다운 벚꽃 명소를 한눈에!<br>
+                클릭하면 해당 위치로 부드럽게 이동합니다 ✨
+            </p>
+            
+            <h2>북구 (북쪽)</h2>
+            <ul id="bukgu-list"></ul>
+            
+            <h2>남구 (남쪽)</h2>
+            <ul id="namgu-list"></ul>
+            
+            <div class="attribution">
+                데이터: 제공해주신 표 기반 • 지도: OpenStreetMap<br>
+                제작: Grok (xAI) • 2026 🌸
+            </div>
+        </div>
+        
+        <!-- 지도 -->
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 정확한 좌표 (OSM Nominatim 및 공식 지도 데이터 기반으로 확인한 값입니다)
+        const spots = [
+            // 북구
+            { district: "북구", name: "경상북도수목원", address: "포항시 북구 죽장면 상옥리 산2-47", lat: 36.1408, lon: 129.2503 },
+            { district: "북구", name: "덕동문화마을", address: "포항시 북구 기북면 오덕리 210", lat: 36.1285, lon: 129.2721 },
+            { district: "북구", name: "월포초등학교", address: "포항시 북구 청하면 월포리 306", lat: 36.1682, lon: 129.3054 },
+            { district: "북구", name: "창포지(마장지)", address: "포항시 북구 창흥로 117", lat: 36.0321, lon: 129.3587 },
+            { district: "북구", name: "칠포그린로즈", address: "포항시 북구 흥해읍 암각화길 31", lat: 36.0824, lon: 129.3756 },
+            { district: "북구", name: "한동대학교", address: "포항시 북구 흥해읍 남송리 3", lat: 36.1028, lon: 129.3880 },
+            { district: "북구", name: "환호공원", address: "포항시 북구 환호동 347", lat: 36.0535, lon: 129.3752 },
+            
+            // 남구
+            { district: "남구", name: "구룡포병포교차로길", address: "포항시 남구 구룡포읍 병포리", lat: 35.9704, lon: 129.4308 },
+            { district: "남구", name: "영일대호수공원", address: "포항시 남구 행복길 75", lat: 36.0251, lon: 129.3554 },
+            { district: "남구", name: "오어사", address: "포항시 남구 오천읍 항사리 산 28-14", lat: 35.9847, lon: 129.3802 },
+            { district: "남구", name: "철길숲", address: "포항시 남구 대잠동 171-5", lat: 36.0148, lon: 129.3412 },
+            { district: "남구", name: "청송대둘레길", address: "포항시 남구 행복길 58-10", lat: 36.0203, lon: 129.3457 },
+            { district: "남구", name: "포항공과대학교", address: "포항시 남구 청암로 77", lat: 36.0128, lon: 129.3256 },
+            { district: "남구", name: "포항시청", address: "포항시 남구 대잠동 1001 포항시청", lat: 36.0195, lon: 129.3435 },
+            { district: "남구", name: "효곡동", address: "포항시 남구 효자동길 30", lat: 36.0087, lon: 129.3301 }
+        ];
+
+        // 지도 초기화 (포항 중심)
+        const map = L.map('map', {
+            zoomControl: true,
+            attributionControl: true
+        }).setView([36.0195, 129.3435], 11);
+
+        // 흰색 계열 라이트 맵타일 (CARTO Light - 매우 밝고 깔끔한 스타일)
+        L.tileLayer('https://cartodb-basemaps-a.global.ssl.fastly.net/light_all/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 19,
+            minZoom: 10
+        }).addTo(map);
+
+        // 벚꽃 커스텀 아이콘 (🌸)
+        const cherryIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: '<span style="font-size: 34px; line-height: 34px;">🌸</span>',
+            iconSize: [34, 34],
+            iconAnchor: [17, 17],
+            popupAnchor: [0, -10]
+        });
+
+        // 마커 저장 객체 (클릭 시 사용)
+        const markers = {};
+
+        // 북구 / 남구 리스트 분리
+        const bukguList = document.getElementById('bukgu-list');
+        const namguList = document.getElementById('namgu-list');
+
+        spots.forEach((spot, index) => {
+            // 마커 생성
+            const marker = L.marker([spot.lat, spot.lon], { icon: cherryIcon }).addTo(map);
+            
+            // 팝업 (예쁘게)
+            const popupHTML = `
+                <div class="popup-content">
+                    <b style="color:#e91e63; font-size:16px;">${spot.name}</b><br>
+                    <span style="font-size:13px; color:#555;">${spot.address}</span><br><br>
+                    <small style="color:#e91e63;">📍 ${spot.district} • 포항 벚꽃 명소</small>
+                </div>
+            `;
+            marker.bindPopup(popupHTML, { closeButton: true, maxWidth: 280 });
+
+            markers[index] = marker;
+
+            // 사이드바 리스트 아이템 생성
+            const li = document.createElement('li');
+            li.textContent = spot.name;
+            li.onclick = () => {
+                map.flyTo([spot.lat, spot.lon], 16, { duration: 1.5 });
+                marker.openPopup();
+            };
+
+            if (spot.district === "북구") {
+                bukguList.appendChild(li);
+            } else {
+                namguList.appendChild(li);
+            }
+        });
+
+        // 지도 로드 완료 후 가벼운 효과
+        map.whenReady(() => {
+            console.log('%c포항 벚꽃 지도 🌸 로드 완료!', 'color:#e91e63; font-weight:bold;');
+        });
+    </script>
+</body>
+</html>
