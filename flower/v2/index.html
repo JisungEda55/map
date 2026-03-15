@@ -3,35 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>포항 벚꽃 지도 🌸 (위성뷰 포함)</title>
+    <title>포항 벚꽃 지도 🌸</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        /* [폰트 및 기본 스타일은 이전과 동일] */
+        /* 폰트 설정: LineSeed (700 Bold 기본) */
         @font-face {
             font-family: 'LineSeed'; 
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
             font-weight: 400; font-display: swap;
         }
-        body { margin: 0; padding: 0; font-family: 'LineSeed', sans-serif; background: #fffaf0; }
+        @font-face {
+            font-family: 'LineSeed'; 
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+            font-weight: 700; font-display: swap;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'LineSeed', sans-serif;
+            font-weight: 700; /* 전역 700 설정 */
+            background: #fffaf0;
+            color: #333;
+            -webkit-font-smoothing: antialiased;
+        }
+
         #container { display: flex; flex-direction: column; height: 100vh; }
-        #map { width: 100%; height: 45vh; z-index: 10; }
-        #sidebar { flex: 1; padding: 20px; overflow-y: auto; background: #fff; border-top: 4px solid #f0fdf4; border-radius: 25px 25px 0 0; margin-top: -20px; z-index: 20; }
-        h1 { text-align: center; color: #e91e63; font-size: 22px; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: #666; font-size: 14px; margin-bottom: 20px; }
-        h2 { color: #2e7d32; font-size: 17px; margin: 20px 0 10px; display: flex; align-items: center; }
-        h2::before { content: ""; display: inline-block; width: 4px; height: 16px; background: #a3e635; margin-right: 8px; border-radius: 2px; }
-        ul { list-style: none; padding: 0; }
-        li { padding: 15px; margin-bottom: 10px; background: #f9fff9; border: 1px solid #eefae1; border-radius: 15px; cursor: pointer; font-size: 15px; }
-        .custom-pin { display: flex; justify-content: center; align-items: center; }
-        .popup-content { font-family: 'LineSeed', sans-serif; text-align: center; }
+        #map { width: 100%; height: 45vh; position: relative; }
+        #sidebar { 
+            flex: 1; padding: 25px 20px; overflow-y: auto; background: #fff; 
+            border-top: 4px solid #f0fdf4; border-radius: 30px 30px 0 0; 
+            margin-top: -30px; z-index: 1000; box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+        }
+
+        h1 { text-align: center; color: #e91e63; font-size: 24px; margin: 0 0 20px 0; }
+        h2 { color: #2e7d32; font-size: 18px; margin: 25px 0 12px; display: flex; align-items: center; }
+        h2::before { content: ""; display: inline-block; width: 5px; height: 18px; background: #a3e635; margin-right: 10px; border-radius: 3px; }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { 
+            padding: 18px; margin-bottom: 12px; background: #f9fff9; border: 1.5px solid #eefae1; 
+            border-radius: 18px; cursor: pointer; transition: all 0.2s; font-size: 16px;
+        }
+        li:active { transform: scale(0.98); background: #eefae1; }
+
+        /* --- 커스텀 지도 컨트롤 UI --- */
+        
+        /* 1. 레이어 전환 버튼 (지구본) */
+        .map-layer-btn {
+            position: absolute; top: 20px; right: 20px; z-index: 2000;
+            width: 50px; height: 50px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            border: none; outline: none;
+        }
+        /* 일반 모드: 흰색 배경 */
+        .layer-street { background: #ffffff; color: #333; }
+        /* 위성 모드: AI 그라데이션 */
+        .layer-satellite { 
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%); 
+            color: #fff; 
+        }
+
+        /* 2. 알약 모양 줌 컨트롤 */
+        .zoom-pill {
+            position: absolute; top: 85px; right: 20px; z-index: 2000;
+            display: flex; flex-direction: column;
+            background: #ffffff; border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); overflow: hidden;
+            width: 50px; border: 1px solid rgba(0,0,0,0.05);
+        }
+        .zoom-btn {
+            height: 50px; border: none; background: transparent;
+            font-size: 20px; font-weight: 700; color: #333;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .zoom-btn:active { background: #f0f0f0; }
+        .zoom-sep { height: 1px; background: #eee; margin: 0 10px; }
+
+        .popup-content { font-family: 'LineSeed'; font-weight: 700; text-align: center; }
     </style>
 </head>
 <body>
     <div id="container">
-        <div id="map"></div>
+        <div id="map">
+            <button id="layerToggle" class="map-layer-btn layer-street" onclick="toggleLayer()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="2" y1="12" x2="22" y2="12"></line>
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+                </svg>
+            </button>
+
+            <div class="zoom-pill">
+                <button class="zoom-btn" onclick="map.zoomIn()">+</button>
+                <div class="zoom-sep"></div>
+                <button class="zoom-btn" onclick="map.zoomOut()">−</button>
+            </div>
+        </div>
+
         <div id="sidebar">
             <h1>포항 벚꽃 스팟 🌸</h1>
-            <p class="subtitle">오른쪽 상단 버튼으로 위성 지도를 켤 수 있습니다!</p>
             <h2>북구 주요 명소</h2>
             <ul id="bukgu-list"></ul>
             <h2>남구 주요 명소</h2>
@@ -41,33 +114,34 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. 맵 타일 설정 (무료 위성 지도 포함)
-        
-        // (A) 일반 라이트 모드 (CartoDB)
-        const streetMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-            attribution: '&copy; OpenStreetMap'
-        });
+        // 맵 타일 설정
+        const streetMap = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OSM' });
+        const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: '&copy; Esri' });
 
-        // (B) 위성 지도 모드 (Esri World Imagery)
-        const satelliteMap = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-            attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EBP, and the GIS User Community'
-        });
-
-        // 지도 초기화 (기본으로 streetMap 설정)
         const map = L.map('map', {
             center: [36.0195, 129.3435],
             zoom: 11,
-            layers: [streetMap] // 초기 레이어
+            layers: [streetMap],
+            zoomControl: false // 기본 줌 컨트롤 숨김
         });
 
-        // 레이어 컨트롤 추가 (우측 상단에서 전환 가능)
-        const baseMaps = {
-            "일반 지도": streetMap,
-            "위성 지도": satelliteMap
-        };
-        L.control.layers(baseMaps).addTo(map);
+        // 레이어 전환 로직
+        let isSatellite = false;
+        function toggleLayer() {
+            const btn = document.getElementById('layerToggle');
+            if (!isSatellite) {
+                map.removeLayer(streetMap);
+                map.addLayer(satelliteMap);
+                btn.className = 'map-layer-btn layer-satellite';
+                isSatellite = true;
+            } else {
+                map.removeLayer(satelliteMap);
+                map.addLayer(streetMap);
+                btn.className = 'map-layer-btn layer-street';
+                isSatellite = false;
+            }
+        }
 
-        // [데이터 및 마커 생성 로직은 이전과 동일]
         const spots = [
             { district: "북구", name: "경상북도수목원", address: "포항시 북구 죽장면 상옥리 산2-47", lat: 36.1408, lon: 129.2503 },
             { district: "북구", name: "덕동문화마을", address: "포항시 북구 기북면 오덕리 210", lat: 36.1285, lon: 129.2721 },
@@ -88,8 +162,8 @@
 
         const greenPinIcon = L.divIcon({
             className: 'custom-pin',
-            html: `<svg width="30" height="42" viewBox="0 0 30 42" fill="none"><path d="M15 0C6.71573 0 0 6.71573 0 15C0 26.25 15 42 15 42C15 42 30 26.25 30 15C30 6.71573 23.2843 0 15 0Z" fill="#a3e635"/><circle cx="15" cy="15" r="6" fill="white"/></svg>`,
-            iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -40]
+            html: `<svg width="34" height="46" viewBox="0 0 30 42" fill="none" style="filter: drop-shadow(0 3px 5px rgba(0,0,0,0.2))"><path d="M15 0C6.71573 0 0 6.71573 0 15C0 26.25 15 42 15 42C15 42 30 26.25 30 15C30 6.71573 23.2843 0 15 0Z" fill="#a3e635"/><circle cx="15" cy="15" r="6" fill="white"/></svg>`,
+            iconSize: [34, 46], iconAnchor: [17, 46], popupAnchor: [0, -42]
         });
 
         const bukguList = document.getElementById('bukgu-list');
@@ -97,12 +171,12 @@
 
         spots.forEach((spot) => {
             const marker = L.marker([spot.lat, spot.lon], { icon: greenPinIcon }).addTo(map);
-            marker.bindPopup(`<div class="popup-content"><strong>${spot.name}</strong><br><span style="font-size:12px;">${spot.address}</span></div>`);
+            marker.bindPopup(`<div class="popup-content"><strong>${spot.name}</strong><br><small style="color:#666">${spot.address}</small></div>`);
             
             const li = document.createElement('li');
-            li.innerHTML = `<strong>${spot.name}</strong><br><small>${spot.address}</small>`;
+            li.innerHTML = `<strong>${spot.name}</strong><br><small style="color:#888; font-weight:400;">${spot.address}</small>`;
             li.onclick = () => {
-                map.flyTo([spot.lat, spot.lon], 16, { duration: 1 });
+                map.flyTo([spot.lat, spot.lon], 16, { duration: 1.5 });
                 marker.openPopup();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
